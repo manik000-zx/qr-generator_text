@@ -17,4 +17,5 @@ A client-side QR Code Generator built using HTML, CSS, JavaScript and GOQR API.
 - Browser LocalStorage
 
 ## Live Demo
-https://yourusername.github.io/qr-code-generator/
+https://manik000-zx.github.io/qr-generator_text/
+
