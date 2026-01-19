@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stylish QR Code Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        color: #fff;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .header img {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #00eaff;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .card {
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 0 25px rgba(0,234,255,0.2);
+        margin-bottom: 25px;
+    }
+
+    input, textarea, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        outline: none;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+
+    textarea {
+        resize: none;
+        height: 80px;
+    }
+
+    button {
+        background: linear-gradient(45deg, #00eaff, #00ff9d);
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        transform: scale(1.03);
+    }
+
+    .qr-preview {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .qr-preview img {
+        width: 220px;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px;
+    }
+
+    .history-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: rgba(255,255,255,0.05);
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .history-item img {
+        width: 60px;
+        background: #fff;
+        padding: 5px;
+        border-radius: 8px;
+    }
+
+    .history-item button {
+        width: auto;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .small {
+        font-size: 13px;
+        opacity: 0.8;
+        word-break: break-all;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <img id="profilePic" src="https://i.imgur.com/1X5K5ZP.png">
+        <div>
+            <h1 id="userName">Your Name</h1>
+            <input type="file" accept="image/*" onchange="changeProfile(event)">
+            <input type="text" placeholder="Enter your name" oninput="changeName(this.value)">
+        </div>
+    </div>
+
+    <!-- QR Generator -->
+    <div class="card">
+        <h2>🔗 QR Code Generator</h2>
+        <textarea id="qrText" placeholder="Enter text / URL"></textarea>
+        <button onclick="generateQR()">Generate QR Code</button>
+
+        <div class="qr-preview" id="previewArea" style="display:none;">
+            <img id="qrImage">
+            <br><br>
+            <a id="downloadBtn" download="qr_code.png">
+                <button>⬇ Download QR</button>
+            </a>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="card">
+        <h2>📜 QR History</h2>
+        <div id="history"></div>
+    </div>
+
+</div>
+
+<script>
+    const historyDiv = document.getElementById("history");
+
+    function generateQR() {
+        const text = document.getElementById("qrText").value.trim();
+        if (!text) return alert("Please enter text");
+
+        const url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(text)}`;
+
+        document.getElementById("qrImage").src = url;
+        document.getElementById("downloadBtn").href = url;
+        document.getElementById("previewArea").style.display = "block";
+
+        saveHistory(text, url);
+        loadHistory();
+    }
+
+    function saveHistory(text, url) {
+        let data = JSON.parse(localStorage.getItem("qrHistory")) || [];
+        data.unshift({ text, url, time: new Date().toLocaleString() });
+        localStorage.setItem("qrHistory", JSON.stringify(data));
+    }
+
+    function loadHistory() {
+        historyDiv.innerHTML = "";
+        let data = JSON.parse(localStorage.getItem("qrHistory")) || [];
+
+        data.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "history-item";
+            div.innerHTML = `
+                <img src="${item.url}">
+                <div class="small">${item.text}<br>${item.time}</div>
+                <a href="${item.url}" download="qr_code.png">
+                    <button>⬇</button>
+                </a>
+            `;
+            historyDiv.appendChild(div);
+        });
+    }
+
+    function changeName(name) {
+        document.getElementById("userName").innerText = name || "Your Name";
+        localStorage.setItem("userName", name);
+    }
+
+    function changeProfile(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            document.getElementById("profilePic").src = reader.result;
+            localStorage.setItem("profilePic", reader.result);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Load saved profile
+    window.onload = () => {
+        loadHistory();
+        if (localStorage.getItem("userName"))
+            document.getElementById("userName").innerText = localStorage.getItem("userName");
+        if (localStorage.getItem("profilePic"))
+            document.getElementById("profilePic").src = localStorage.getItem("profilePic");
+    };
+</script>
+
+</body>
+</html>
